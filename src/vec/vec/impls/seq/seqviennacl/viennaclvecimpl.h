@@ -14,6 +14,7 @@
 #define ViennaCLWaitForGPU() if (PetscViennaCLSynchronize) viennacl::backend::finish();
 
 typedef viennacl::vector<PetscScalar>    ViennaCLVector;
+typedef viennacl::vector<PetscScalar, 1, viennacl::ocl::pooled_clmem_handle>    ViennaCLPooledVector;
 
 PETSC_EXTERN PetscErrorCode PetscViennaCLInit();
 

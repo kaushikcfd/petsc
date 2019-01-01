@@ -41,7 +41,7 @@ PetscErrorCode MatViennaCLCopyToGPU(Mat A)
           if (!viennaclstruct->compressed_mat) viennaclstruct->compressed_mat = new ViennaCLCompressedAIJMatrix();
 
           // Since PetscInt is different from cl_uint, we have to convert:
-          viennacl::backend::mem_handle dummy;
+          viennacl::backend::mem_handle<> dummy;
 
           viennacl::backend::typesafe_host_array<unsigned int> row_buffer; row_buffer.raw_resize(dummy, a->compressedrow.nrows+1);
           for (PetscInt i=0; i<=a->compressedrow.nrows; ++i)
@@ -60,7 +60,7 @@ PetscErrorCode MatViennaCLCopyToGPU(Mat A)
           if (!viennaclstruct->mat) viennaclstruct->mat = new ViennaCLAIJMatrix();
 
           // Since PetscInt is in general different from cl_uint, we have to convert:
-          viennacl::backend::mem_handle dummy;
+          viennacl::backend::mem_handle<> dummy;
 
           viennacl::backend::typesafe_host_array<unsigned int> row_buffer; row_buffer.raw_resize(dummy, A->rmap->n+1);
           for (PetscInt i=0; i<=A->rmap->n; ++i)

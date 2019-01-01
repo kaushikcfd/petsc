@@ -551,7 +551,9 @@ PetscErrorCode VecMDot_SeqViennaCL(Vec xin,PetscInt nv,const Vec yin[],PetscScal
     }
 
     viennacl::vector_tuple<PetscScalar> y_tuple(ygpu_array);
-    ViennaCLVector result = viennacl::linalg::inner_prod(*xgpu, y_tuple);
+
+    ViennaCLPooledVector result(nv, viennacl::traits::context(*xgpu));
+    result = viennacl::linalg::inner_prod(*xgpu, y_tuple);
 
     viennacl::copy(result.begin(), result.end(), z);
 
