@@ -4,8 +4,8 @@ import os
 class Configure(config.package.Package):
   def __init__(self, framework):
     config.package.Package.__init__(self, framework)
-    self.gitcommit         = 'b09c65a'
-    self.download          = ['git://https://github.com/viennacl/viennacl-dev']
+    self.gitcommit         = '61b5c2'
+    self.download          = ['git://https://github.com/kaushikcfd/viennacl-dev']
     self.downloaddirname   = [str('viennacl-dev')]
     self.includes          = ['viennacl/forwards.h']
     self.cxx               = 1
