@@ -1174,3 +1174,209 @@ PETSC_EXTERN PetscErrorCode VecCreate_SeqViennaCL(Vec V)
   PetscFunctionReturn(0);
 }
 
+/*@C
+  VecViennaCLGetCLContext - Get the OpenCL context in which the Vec resides.
+
+  Caller should cast (*ctx) to (const cl_context*). Caller is responsible for
+  invoking clReleaseContext().
+
+
+  Input Parameters:
+.  v    - the vector
+
+  Output Parameters:
+.  ctx - pointer to the pointer of the underlying CL context.
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLCommandQueue(), VecViennaCLGetCLMemRead()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLGetCLContext(Vec v, PETSC_UINTPTR_T* ctx)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get the associated cl_context.");
+#endif
+
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+#if defined(PETSC_HAVE_OPENCL)
+
+  PetscErrorCode ierr;
+  const ViennaCLVector *v_vcl;
+  ierr = VecViennaCLGetArrayRead(v, &v_vcl); CHKERRQ(ierr);
+  try{
+    viennacl::ocl::context vcl_ctx = v_vcl->handle().opencl_handle().context();
+    const cl_context& ocl_ctx = vcl_ctx.handle().get();
+    clRetainContext(ocl_ctx);
+    *ctx = (PETSC_UINTPTR_T)(&ocl_ctx);
+  } catch (std::exception const & ex) {
+      SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
+  }
+
+#endif
+  PetscFunctionReturn(0);
+}
+
+/*@C
+  VecViennaCLGetCLCommandQueue - Get the OpenCL command queue to which all
+  operations of the Vec are enqueued.
+
+  Caller should cast (*queue) to (const cl_command_queue*). Caller is
+  responsible for invoking clReleaseCommandQueue().
+
+  Input Parameters:
+.  v    - the vector
+
+  Output Parameters:
+.  ctx - pointer to the pointer of the CL command queue.
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLGetCLMemRead()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLGetCLQueue(Vec v, PETSC_UINTPTR_T* queue)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get the associated cl_command_queue.");
+#endif
+
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+#if defined(PETSC_HAVE_OPENCL)
+  PetscErrorCode ierr;
+  const ViennaCLVector *v_vcl;
+  ierr = VecViennaCLGetArrayRead(v, &v_vcl); CHKERRQ(ierr);
+  try{
+    viennacl::ocl::context vcl_ctx = v_vcl->handle().opencl_handle().context();
+    const viennacl::ocl::command_queue& vcl_queue = vcl_ctx.current_queue();
+    const cl_command_queue& ocl_queue = vcl_queue.handle().get();
+    clRetainCommandQueue(ocl_queue);
+    *queue = (PETSC_UINTPTR_T)(&ocl_queue);
+  } catch (std::exception const & ex) {
+      SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
+  }
+#endif
+
+  PetscFunctionReturn(0);
+}
+
+/*@C
+  VecViennaCLGetCLMemRead - Provides access to the the CL buffer inside a Vec.
+
+  Caller should cast (*mem) to (const cl_mem*). Caller is responsible for
+  invoking clReleaseMem().
+
+  Input Parameters:
+.  v    - the vector
+
+  Output Parameters:
+.  mem - pointer to the pointer of the underlying CL context.
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLGetCLMemWrite()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemRead(Vec v, PETSC_UINTPTR_T* mem)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get a Vec's cl_mem");
+#endif
+
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+#if defined(PETSC_HAVE_OPENCL)
+  PetscErrorCode ierr;
+  const ViennaCLVector *v_vcl;
+  ierr = VecViennaCLGetArrayRead(v, &v_vcl); CHKERRQ(ierr);
+  try{
+    const cl_mem& ocl_mem = v_vcl->handle().opencl_handle().get();
+    clRetainMemObject(ocl_mem);
+    *mem = (PETSC_UINTPTR_T)(&ocl_mem);
+  } catch (std::exception const & ex) {
+      SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
+  }
+#endif
+
+  PetscFunctionReturn(0);
+}
+
+/*@C
+  VecViennaCLGetCLMemWrite - Provides access to the the CL buffer inside a Vec.
+
+  Caller should cast (*mem) to (const cl_mem*). Caller is responsible for
+  invoking clReleaseMem().
+
+  The device pointer has to be released by calling
+  VecViennaCLRestoreCLMemWrite().  Upon restoring the vector data the data on
+  the host will be marked as out of date.  A subsequent access of the host data
+  will thus incur a data transfer from the device to the host.
+
+  Input Parameters:
+.  v    - the vector
+
+  Output Parameters:
+.  mem - pointer to the pointer of the underlying CL context.
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLRestoreCLMemWrite()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemWrite(Vec v, PETSC_UINTPTR_T* mem)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get a Vec's cl_mem");
+#endif
+
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+#if defined(PETSC_HAVE_OPENCL)
+  PetscErrorCode ierr;
+  ViennaCLVector *v_vcl;
+  ierr = VecViennaCLGetArrayWrite(v, &v_vcl); CHKERRQ(ierr);
+  try{
+    const cl_mem& ocl_mem = v_vcl->handle().opencl_handle().get();
+    clRetainMemObject(ocl_mem);
+    *mem = (PETSC_UINTPTR_T)(&ocl_mem);
+  } catch (std::exception const & ex) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
+  }
+#endif
+
+  PetscFunctionReturn(0);
+}
+
+/*@C
+  VecViennaCLRestoreCLMemWrite - Restores a CL buffer pointer previously
+  acquired with VecViennaCLGetCLMemWrite().
+
+   This marks the host data as out of date.  Subsequent access to the
+   vector data on the host side with for instance VecGetArray() incurs a
+   data transfer.
+
+  Input Parameters:
+.  v    - the vector
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLGetCLMemWrite()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLRestoreCLMemWrite(Vec v)
+{
+#if defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to restore a Vec's cl_mem");
+#endif
+
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+#if defined(PETSC_HAVE_OPENCL)
+  PetscErrorCode ierr;
+  ierr = VecViennaCLRestoreArrayWrite(v, PETSC_NULL); CHKERRQ(ierr);
+#endif
+
+  PetscFunctionReturn(0);
+}
