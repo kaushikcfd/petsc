@@ -1195,12 +1195,10 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLContext(Vec v, PETSC_UINTPTR_T* ctx)
 {
 #if !defined(PETSC_HAVE_OPENCL)
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get the associated cl_context.");
-#endif
+#else
 
   PetscFunctionBegin;
   PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
-
-#if defined(PETSC_HAVE_OPENCL)
 
   PetscErrorCode ierr;
   const ViennaCLVector *v_vcl;
@@ -1214,8 +1212,8 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLContext(Vec v, PETSC_UINTPTR_T* ctx)
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
   }
 
-#endif
   PetscFunctionReturn(0);
+#endif
 }
 
 /*@C
@@ -1239,12 +1237,10 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLQueue(Vec v, PETSC_UINTPTR_T* queue)
 {
 #if !defined(PETSC_HAVE_OPENCL)
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get the associated cl_command_queue.");
-#endif
-
+#else
   PetscFunctionBegin;
   PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
 
-#if defined(PETSC_HAVE_OPENCL)
   PetscErrorCode ierr;
   const ViennaCLVector *v_vcl;
   ierr = VecViennaCLGetArrayRead(v, &v_vcl); CHKERRQ(ierr);
@@ -1257,9 +1253,9 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLQueue(Vec v, PETSC_UINTPTR_T* queue)
   } catch (std::exception const & ex) {
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
   }
-#endif
 
   PetscFunctionReturn(0);
+#endif
 }
 
 /*@C
@@ -1282,12 +1278,10 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemRead(Vec v, PETSC_UINTPTR_T* mem)
 {
 #if !defined(PETSC_HAVE_OPENCL)
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get a Vec's cl_mem");
-#endif
-
+#else
   PetscFunctionBegin;
   PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
 
-#if defined(PETSC_HAVE_OPENCL)
   PetscErrorCode ierr;
   const ViennaCLVector *v_vcl;
   ierr = VecViennaCLGetArrayRead(v, &v_vcl); CHKERRQ(ierr);
@@ -1298,9 +1292,8 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemRead(Vec v, PETSC_UINTPTR_T* mem)
   } catch (std::exception const & ex) {
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
   }
-#endif
-
   PetscFunctionReturn(0);
+#endif
 }
 
 /*@C
@@ -1328,12 +1321,10 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemWrite(Vec v, PETSC_UINTPTR_T* mem
 {
 #if !defined(PETSC_HAVE_OPENCL)
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get a Vec's cl_mem");
-#endif
-
+#else
   PetscFunctionBegin;
   PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
 
-#if defined(PETSC_HAVE_OPENCL)
   PetscErrorCode ierr;
   ViennaCLVector *v_vcl;
   ierr = VecViennaCLGetArrayWrite(v, &v_vcl); CHKERRQ(ierr);
@@ -1344,9 +1335,9 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemWrite(Vec v, PETSC_UINTPTR_T* mem
   } catch (std::exception const & ex) {
     SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
   }
-#endif
 
   PetscFunctionReturn(0);
+#endif
 }
 
 /*@C
@@ -1366,17 +1357,15 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemWrite(Vec v, PETSC_UINTPTR_T* mem
 @*/
 PETSC_EXTERN PetscErrorCode VecViennaCLRestoreCLMemWrite(Vec v)
 {
-#if defined(PETSC_HAVE_OPENCL)
+#if !defined(PETSC_HAVE_OPENCL)
   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to restore a Vec's cl_mem");
-#endif
-
+#else
   PetscFunctionBegin;
   PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
 
-#if defined(PETSC_HAVE_OPENCL)
   PetscErrorCode ierr;
   ierr = VecViennaCLRestoreArrayWrite(v, PETSC_NULL); CHKERRQ(ierr);
-#endif
 
   PetscFunctionReturn(0);
+#endif
 }
