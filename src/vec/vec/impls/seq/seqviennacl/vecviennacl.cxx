@@ -1185,7 +1185,7 @@ PETSC_EXTERN PetscErrorCode VecCreate_SeqViennaCL(Vec V)
 .  v    - the vector
 
   Output Parameters:
-.  ctx - pointer to the pointer of the underlying CL context.
+.  ctx - pointer to the underlying CL context
 
   Level: intermediate
 
@@ -1227,7 +1227,7 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLContext(Vec v, PETSC_UINTPTR_T* ctx)
 .  v    - the vector
 
   Output Parameters:
-.  ctx - pointer to the pointer of the CL command queue.
+.  ctx - pointer to the CL command queue
 
   Level: intermediate
 
@@ -1268,7 +1268,7 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLQueue(Vec v, PETSC_UINTPTR_T* queue)
 .  v    - the vector
 
   Output Parameters:
-.  mem - pointer to the pointer of the underlying CL context.
+.  mem - pointer to the device buffer
 
   Level: intermediate
 
@@ -1311,7 +1311,7 @@ PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMemRead(Vec v, PETSC_UINTPTR_T* mem)
 .  v    - the vector
 
   Output Parameters:
-.  mem - pointer to the pointer of the underlying CL context.
+.  mem - pointer to the device buffer
 
   Level: intermediate
 
@@ -1365,6 +1365,81 @@ PETSC_EXTERN PetscErrorCode VecViennaCLRestoreCLMemWrite(Vec v)
 
   PetscErrorCode ierr;
   ierr = VecViennaCLRestoreArrayWrite(v, PETSC_NULL); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+#endif
+}
+
+
+/*@C
+  VecViennaCLGetCLMem - Provides access to the the CL buffer inside a Vec.
+
+  Caller should cast (*mem) to (const cl_mem). Caller is responsible for
+  invoking clReleaseMemObject().
+
+  The device pointer has to be released by calling VecViennaCLRestoreCLMem().
+  Upon restoring the vector data the data on the host will be marked as out of
+  date.  A subsequent access of the host data will thus incur a data transfer
+  from the device to the host.
+
+  Input Parameters:
+.  v    - the vector
+
+  Output Parameters:
+.  mem - pointer to the device buffer
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLRestoreCLMem()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLGetCLMem(Vec v, PETSC_UINTPTR_T* mem)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to get a Vec's cl_mem");
+#else
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+  PetscErrorCode ierr;
+  ViennaCLVector *v_vcl;
+  ierr = VecViennaCLGetArray(v, &v_vcl); CHKERRQ(ierr);
+  try{
+    const cl_mem ocl_mem = v_vcl->handle().opencl_handle().get();
+    clRetainMemObject(ocl_mem);
+    *mem = (PETSC_UINTPTR_T)(ocl_mem);
+  } catch (std::exception const & ex) {
+    SETERRQ1(PETSC_COMM_SELF,PETSC_ERR_LIB,"ViennaCL error: %s", ex.what());
+  }
+
+  PetscFunctionReturn(0);
+#endif
+}
+
+/*@C
+  VecViennaCLRestoreCLMem - Restores a CL buffer pointer previously
+  acquired with VecViennaCLGetCLMem().
+
+   This marks the host data as out of date. Subsequent access to the vector
+   data on the host side with for instance VecGetArray() incurs a data
+   transfer.
+
+  Input Parameters:
+.  v    - the vector
+
+  Level: intermediate
+
+.seealso: VecViennaCLGetCLContext(), VecViennaCLGetCLMem()
+@*/
+PETSC_EXTERN PetscErrorCode VecViennaCLRestoreCLMem(Vec v)
+{
+#if !defined(PETSC_HAVE_OPENCL)
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_LIB,"PETSc must be configured with --with-opencl to restore a Vec's cl_mem");
+#else
+  PetscFunctionBegin;
+  PetscCheckTypeNames(v, VECSEQVIENNACL, VECMPIVIENNACL);
+
+  PetscErrorCode ierr;
+  ierr = VecViennaCLRestoreArray(v, PETSC_NULL); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 #endif
