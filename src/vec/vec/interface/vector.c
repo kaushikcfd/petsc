@@ -1881,6 +1881,76 @@ PetscErrorCode VecBindToCPU(Vec v,PetscBool flg)
 #endif
 }
 
+/*@
+     VecIsBoundToCPU - Query if a Vec is bound to CPU.
+
+   Input Parameters:
++   v - the vector
+-   flg - set to PETSC_TRUE is v is bound to CPU, set to PETSC_FALSE otherwise
+
+   Level: intermediate
+
+.seealso: VecBindToCPU()
+@*/
+PetscErrorCode VecIsBoundToCPU(Vec v,PetscBool* flg)
+{
+  PetscFunctionBegin;
+#if defined(PETSC_HAVE_VIENNACL) || defined(PETSC_HAVE_CUDA)
+  VecType allowedTypes[4] = {VECSEQCUDA, VECSEQVIENNACL, VECMPICUDA, VECMPIVIENNACL};
+  VecType vType;
+  PetscErrorCode ierr;
+  ierr = VecGetType(v, &vType);CHKERRQ(ierr);
+  for (int i=0; i<4; ++i)
+  {
+    PetscBool isOffloadableType;
+    PetscStrcmp(vType, allowedTypes[i], &isOffloadableType);
+    if (isOffloadableType)
+    {
+      // 'v' is a vector capable of offloading
+      *flg = v->boundtocpu;
+      PetscFunctionReturn(0);
+    }
+  }
+#endif
+  // 'v' not capable of offloading i.e. bound to cpu by nature
+  *flg = PETSC_TRUE;
+  PetscFunctionReturn(0);
+}
+
+
+/*@
+     VecGetOffloadMask - Get the offload mask of a Vec.
+
+   Input Parameters:
++   v - the vector
+-   mask - corresponding PetscOffloadMask enum value.
+
+   Level: intermediate
+@*/
+PetscErrorCode VecGetOffloadMask(Vec v,PetscInt* mask)
+{
+  PetscFunctionBegin;
+#if defined(PETSC_HAVE_VIENNACL) || defined(PETSC_HAVE_CUDA)
+  VecType allowedTypes[4] = {VECSEQCUDA, VECSEQVIENNACL, VECMPICUDA, VECMPIVIENNACL};
+  VecType vType;
+  PetscErrorCode ierr;
+  ierr = VecGetType(v, &vType);CHKERRQ(ierr);
+  for (int i=0; i<4; ++i)
+  {
+    PetscBool isOffloadableType;
+    PetscStrcmp(vType, allowedTypes[i], &isOffloadableType);
+    if (isOffloadableType)
+    {
+      // 'v' is a vector capable of offloading
+      *mask = v->offloadmask;
+      PetscFunctionReturn(0);
+    }
+  }
+#endif
+  SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_WRONGSTATE,"Can call VecGetOffloadMask() only for viennacl or cuda vecs.");
+}
+
+
 /*@C
   VecSetPinnedMemoryMin - Set the minimum data size for which pinned memory will be used for host (CPU) allocations.
 
