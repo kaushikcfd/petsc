@@ -337,6 +337,9 @@ PetscErrorCode  VecCreateMPICUDAWithArrays(MPI_Comm comm,PetscInt bs,PetscInt n,
     ierr = VecCUDAAllocateCheck(*vv); CHKERRQ(ierr);
     // allocate host data
     ierr = VecCUDAAllocateCheckHost(*vv); CHKERRQ(ierr);
+    ierr = VecSet(*vv,0.0);CHKERRQ(ierr);
+    ierr = VecSet_Seq(*vv,0.0);CHKERRQ(ierr);
+    vv->offloadmask = PETSC_OFFLOAD_BOTH;
     (*vv)->offloadmask = PETSC_OFFLOAD_BOTH;
   }
 

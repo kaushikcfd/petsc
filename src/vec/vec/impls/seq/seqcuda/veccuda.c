@@ -387,6 +387,8 @@ PetscErrorCode  VecCreateSeqCUDAWithArrays(MPI_Comm comm,PetscInt bs,PetscInt n,
   {
     ierr = VecCUDAAllocateCheck(*V); CHKERRQ(ierr);
     ierr = VecCUDAAllocateCheckHost(*V); CHKERRQ(ierr);
+    ierr = VecSet(*V,0.0);CHKERRQ(ierr);
+    ierr = VecSet_Seq(*V,0.0);CHKERRQ(ierr);
     (*V)->offloadmask = PETSC_OFFLOAD_BOTH;
   }
 
